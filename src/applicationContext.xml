@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+    http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context-3.2.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx-3.2.xsd ">
+
+	<context:property-placeholder location="classpath:database.properties"/>
+	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource"  destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driver}"></property>
+		<property name="url" value="${jdbc.url}"></property>
+		<property name="username" value="${jdbc.username}"></property>
+		<property name="password" value="${jdbc.password}"></property>
+		<!--最大连接数 -->
+		<property name="maxTotal" value="${jdbc.maxTotal}" />
+		<!--最大空闲连接  -->
+		<property name="maxIdle" value="${jdbc.maxIdle}" />
+		<!--初始化连接数  -->
+		<property name="initialSize" value="${jdbc.initialSize}" />
+	</bean>
+
+	<!-- 定义事务管理器 -->
+	<bean id="txManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<!-- 配置Spring事务管理的代码注解驱动 -->
+	<tx:annotation-driven transaction-manager="txManager" />
+
+	<!-- 配置SqlSessionFactoryBean -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 引用数据源组件 -->
+		<property name="dataSource" ref="dataSource" />
+		<!-- 引用MyBatis配置文件中的配置 -->
+		<property name="configLocation" value="classpath:mybatis-config.xml" />
+		<!-- 配置SQL映射文件信息 -->
+		<property name="mapperLocations">
+			<list>
+				<value>classpath:project/dao/*.xml</value>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- 使用自动扫描映射配置器进行自动匹配实现DAO层的解析：只写一个配置即可 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer" scope="singleton">
+		<property name="basePackage" value="project.dao" />
+	</bean>
+	
+	<!-- 配置扫描注解定义的业务逻辑层Service Bean -->
+	<context:component-scan base-package="project.service" />
+	
+</beans>
